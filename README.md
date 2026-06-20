@@ -76,6 +76,12 @@ By default, VIDMARK STUDIO creates and uses:
 ~/Movies/VIDMARK STUDIO
 ```
 
+The `Episode` picker opens the configured videos folder. To point it at an existing production library:
+
+```bash
+defaults write studio.vidmark.desktop VidmarkStudioVideosRoot "/path/to/your/Videos"
+```
+
 Each project folder can contain:
 
 ```text

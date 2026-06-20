@@ -138,6 +138,7 @@ final class StudioStore: ObservableObject {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
+        try? FileManager.default.createDirectory(at: ProjectPaths.videosRoot, withIntermediateDirectories: true)
         panel.directoryURL = ProjectPaths.videosRoot
         if panel.runModal() == .OK, let url = panel.url {
             episodeFolderURL = url
