@@ -97,8 +97,8 @@ struct ReviewView: View {
                 NativeVideoPlayerView(player: player, fullScreenTrigger: fullScreenTrigger)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(minHeight: isTheaterMode ? 700 : 560)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(16.0 / 9.0, contentMode: .fit)
         .background(.black)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
@@ -106,6 +106,8 @@ struct ReviewView: View {
                 .strokeBorder(.white.opacity(0.10))
         )
         .shadow(color: .black.opacity(0.32), radius: 24, y: 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(minHeight: isTheaterMode ? 700 : 560, alignment: .top)
     }
 
     private var transportControls: some View {
