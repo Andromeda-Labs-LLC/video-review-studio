@@ -8,8 +8,9 @@ struct ReviewView: View {
     @State private var showRevisionPicker = false
     @State private var isTheaterMode = false
     @State private var fullScreenTrigger = 0
-    @State private var shuttleDirection = ShuttleDirection.paused
-    @State private var shuttleRate: Float = 1
+    @State private var isPlaying = false
+    @State private var frameStepTarget: CMTime?
+    @State private var frameDuration = CMTime(value: 1, timescale: 24)
 
     var body: some View {
         HStack(spacing: 0) {
@@ -114,25 +115,25 @@ struct ReviewView: View {
         HStack(spacing: 10) {
             shuttleButton(
                 title: "J",
-                subtitle: shuttleDirection == .reverse ? "\(Int(shuttleRate))x" : "REV",
-                systemImage: "backward.fill",
-                action: shuttleReverse
+                subtitle: "-1 FR",
+                systemImage: "backward.frame.fill",
+                action: stepBackwardOneFrame
             )
             .keyboardShortcut("j", modifiers: [])
 
             shuttleButton(
                 title: "K",
-                subtitle: "PAUSE",
-                systemImage: "pause.fill",
-                action: pausePlayback
+                subtitle: isPlaying ? "PAUSE" : "PLAY",
+                systemImage: isPlaying ? "pause.fill" : "play.fill",
+                action: togglePlayback
             )
             .keyboardShortcut("k", modifiers: [])
 
             shuttleButton(
                 title: "L",
-                subtitle: shuttleDirection == .forward ? "\(Int(shuttleRate))x" : "FWD",
-                systemImage: "forward.fill",
-                action: shuttleForward
+                subtitle: "+1 FR",
+                systemImage: "forward.frame.fill",
+                action: stepForwardOneFrame
             )
             .keyboardShortcut("l", modifiers: [])
 
@@ -244,11 +245,7 @@ struct ReviewView: View {
     }
 
     private var shuttleLabel: String {
-        switch shuttleDirection {
-        case .paused: "Paused"
-        case .forward: "Forward shuttle \(Int(shuttleRate))x"
-        case .reverse: "Reverse shuttle \(Int(shuttleRate))x"
-        }
+        isPlaying ? "Playing" : "Paused - J/L step one frame"
     }
 
     private func shuttleButton(
@@ -276,10 +273,16 @@ struct ReviewView: View {
     private func loadMaster() {
         guard let url = store.masterVideoURL else {
             pausePlayback()
+            frameStepTarget = nil
             player.replaceCurrentItem(with: nil)
             return
         }
-        player.replaceCurrentItem(with: AVPlayerItem(url: url))
+        let item = AVPlayerItem(url: url)
+        item.preferredForwardBufferDuration = 1
+        player.automaticallyWaitsToMinimizeStalling = false
+        player.replaceCurrentItem(with: item)
+        refreshFrameDuration(for: item)
+        frameStepTarget = nil
         clock.attach(to: player)
         pausePlayback()
     }
@@ -289,30 +292,62 @@ struct ReviewView: View {
         showRevisionPicker = true
     }
 
-    private func shuttleReverse() {
-        if shuttleDirection == .reverse {
-            shuttleRate = min(shuttleRate * 2, 4)
-        } else {
-            shuttleDirection = .reverse
-            shuttleRate = 1
-        }
-        player.playImmediately(atRate: -shuttleRate)
-    }
-
     private func pausePlayback() {
         player.pause()
-        shuttleDirection = .paused
-        shuttleRate = 1
+        isPlaying = false
+        let currentSeconds = player.currentTime().seconds
+        if currentSeconds.isFinite {
+            clock.currentTime = currentSeconds
+        }
     }
 
-    private func shuttleForward() {
-        if shuttleDirection == .forward {
-            shuttleRate = min(shuttleRate * 2, 4)
+    private func togglePlayback() {
+        frameStepTarget = nil
+        if isPlaying {
+            pausePlayback()
         } else {
-            shuttleDirection = .forward
-            shuttleRate = 1
+            player.playImmediately(atRate: 1)
+            isPlaying = true
         }
-        player.playImmediately(atRate: shuttleRate)
+    }
+
+    private func stepBackwardOneFrame() {
+        stepOneFrame(direction: -1)
+    }
+
+    private func stepForwardOneFrame() {
+        stepOneFrame(direction: 1)
+    }
+
+    private func stepOneFrame(direction: Int32) {
+        guard store.masterVideoURL != nil else { return }
+        pausePlayback()
+
+        let baseTime = frameStepTarget ?? player.currentTime()
+        let delta = CMTimeMultiply(frameDuration, multiplier: direction)
+        let duration = player.currentItem?.duration
+        var target = CMTimeAdd(baseTime, delta)
+
+        if target < .zero {
+            target = .zero
+        }
+
+        if let duration, duration.isNumeric, target > duration {
+            target = duration
+        }
+
+        frameStepTarget = target
+        clock.currentTime = target.seconds.isFinite ? target.seconds : clock.currentTime
+        let targetSeconds = target.seconds
+        player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero) { finished in
+            guard finished else { return }
+            Task { @MainActor in
+                if self.frameStepTarget?.seconds == targetSeconds {
+                    self.frameStepTarget = nil
+                }
+                self.clock.currentTime = targetSeconds.isFinite ? targetSeconds : self.clock.currentTime
+            }
+        }
     }
 
     private func step(seconds: Double) {
@@ -322,14 +357,33 @@ struct ReviewView: View {
     }
 
     private func seek(to seconds: Double) {
-        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+        frameStepTarget = nil
+        let target = CMTime(seconds: seconds, preferredTimescale: 600)
+        player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
+        clock.currentTime = seconds
     }
-}
 
-private enum ShuttleDirection {
-    case paused
-    case forward
-    case reverse
+    private func refreshFrameDuration(for item: AVPlayerItem) {
+        frameDuration = CMTime(value: 1, timescale: 24)
+        Task {
+            do {
+                let tracks = try await item.asset.loadTracks(withMediaType: .video)
+                guard let videoTrack = tracks.first else { return }
+                let nominalFrameRate = try await videoTrack.load(.nominalFrameRate)
+                let fps = nominalFrameRate > 0 ? Double(nominalFrameRate) : 24
+                let detectedFrameDuration = CMTime(seconds: 1 / fps, preferredTimescale: 600)
+                await MainActor.run {
+                    guard player.currentItem === item else { return }
+                    frameDuration = detectedFrameDuration
+                }
+            } catch {
+                await MainActor.run {
+                    guard player.currentItem === item else { return }
+                    frameDuration = CMTime(value: 1, timescale: 24)
+                }
+            }
+        }
+    }
 }
 
 struct RevisionTypePickerSheet: View {
@@ -576,7 +630,7 @@ final class PlayerClock: ObservableObject {
         detach()
         self.player = player
         observerHandle = player.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.20, preferredTimescale: 600),
+            forInterval: CMTime(seconds: 0.10, preferredTimescale: 600),
             queue: .main
         ) { [weak self] time in
             Task { @MainActor in
