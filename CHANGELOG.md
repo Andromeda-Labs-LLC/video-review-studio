@@ -15,6 +15,7 @@
 - Improved frame stepping by mapping arrow actions to the detected source frame timing.
 - Clamped review playback away from the zero-time black frame so the player starts on the first visible frame.
 - Added `masters/shorts` as the final Shorts master destination.
+- Documented short Finder-friendly master naming for draft, final, and Shorts exports.
 - Reorganized the sidebar so Review is the primary workflow.
 
 ## v0.1.0

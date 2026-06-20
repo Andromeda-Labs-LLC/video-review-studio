@@ -106,6 +106,13 @@ prompts
 qa/reviewer-notes
 ```
 
+Recommended master naming:
+
+- Draft review masters: `<project-id>-v1.mp4`, `<project-id>-v2.mp4`, `<project-id>-v3.mp4`
+- Draft render artifacts: `masters/drafts/workfiles/`
+- Approved upload master: `<project-id>-Final.mp4`
+- Approved Shorts masters: `<project-id>-Short-01.mp4`, `<project-id>-Short-02.mp4`
+
 ## Review Workflow
 
 1. Choose or create a project folder.
