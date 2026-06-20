@@ -17,6 +17,7 @@ struct ReviewView: View {
     @State private var frameDuration = CMTime(value: 1, timescale: 24)
     @State private var showNewReviewConfirmation = false
     @State private var keyDownMonitor: Any?
+    @State private var submitFeedback = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -283,13 +284,27 @@ struct ReviewView: View {
 
             Button {
                 store.submitReviewPackage()
+                triggerSubmitFeedback()
             } label: {
-                Text("SUBMIT")
-                    .font(.system(size: 16, weight: .bold))
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    Image(systemName: submitFeedback ? "checkmark.circle.fill" : "paperplane.fill")
+                        .symbolEffect(.bounce, value: submitFeedback)
+                    Text(submitFeedback ? "SUBMITTED" : "SUBMIT")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(SubmitButtonStyle())
+            .buttonStyle(SubmitButtonStyle(isSubmitted: submitFeedback))
+            .scaleEffect(submitFeedback ? 1.025 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.68), value: submitFeedback)
             .disabled(store.reviewMarks.isEmpty)
+
+            if submitFeedback {
+                Label("Revision packet saved and copied to clipboard.", systemImage: "checkmark.seal.fill")
+                    .font(.caption)
+                    .foregroundStyle(StudioTheme.green)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
         }
     }
 
@@ -360,6 +375,19 @@ struct ReviewView: View {
     private func markThumbnailFrame() {
         pausePlayback()
         store.addReviewMark(ReviewMark(timecodeSeconds: clock.currentTime, revisionType: .thumbnail))
+    }
+
+    private func triggerSubmitFeedback() {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.72)) {
+            submitFeedback = true
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.2))
+            withAnimation(.easeOut(duration: 0.25)) {
+                submitFeedback = false
+            }
+        }
     }
 
     private func installKeyDownMonitor() {
@@ -1090,11 +1118,14 @@ struct MarkButtonStyle: ButtonStyle {
 }
 
 struct SubmitButtonStyle: ButtonStyle {
+    var isSubmitted = false
+
     func makeBody(configuration: Configuration) -> some View {
+        let fill = isSubmitted ? StudioTheme.green : StudioTheme.gold
         configuration.label
             .padding(.vertical, 12)
-            .background(configuration.isPressed ? StudioTheme.gold.opacity(0.72) : StudioTheme.gold)
-            .foregroundStyle(.black)
+            .background(configuration.isPressed ? fill.opacity(0.72) : fill)
+            .foregroundStyle(isSubmitted ? .white : .black)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .opacity(configuration.isPressed ? 0.9 : 1)
     }

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1
+
+- Updated trim-start and trim-end marks so the parked playhead time pre-populates the trim `In` point.
+- Trim `Out` now stays blank until the reviewer sets it manually.
+- Added premium submit feedback: success color, checkmark state, subtle animation, and confirmation copy after revision packet submission.
+
 ## v0.2.0
 
 - Rebuilt the review screen around a larger hero video player.

@@ -81,12 +81,9 @@ struct ReviewMark: Identifiable, Codable, Equatable {
         self.revisionType = revisionType
 
         switch revisionType {
-        case .trimClipStart:
-            self.trimInSeconds = 0
-            self.trimOutSeconds = timecodeSeconds
-        case .trimClipEnd:
+        case .trimClipStart, .trimClipEnd:
             self.trimInSeconds = timecodeSeconds
-            self.trimOutSeconds = timecodeSeconds + 2
+            self.trimOutSeconds = nil
         case .speedRamp:
             self.speedPercent = 120
         case .thumbnail:

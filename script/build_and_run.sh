@@ -4,7 +4,7 @@ set -euo pipefail
 MODE="${1:-run}"
 PRODUCT_NAME="VidmarkStudio"
 APP_NAME="VIDMARK STUDIO"
-APP_VERSION="0.2.0"
+APP_VERSION="0.2.1"
 BUNDLE_ID="studio.vidmark.desktop"
 MIN_SYSTEM_VERSION="14.0"
 
