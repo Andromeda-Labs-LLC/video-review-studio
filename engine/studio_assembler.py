@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """VIDMARK STUDIO assembly engine.
 
-Local FFmpeg assembly for approved modules. The engine keeps video cuts hard,
-softens audio boundaries, normalizes loudness, and allows speed correction only
-when a manifest explicitly marks it as reviewer-approved.
+Local FFmpeg assembly for approved modules. The engine keeps video and sound
+effect cuts hard, normalizes loudness, and allows speed correction only when a
+manifest explicitly marks it as reviewer-approved.
 """
 
 from __future__ import annotations
@@ -151,13 +151,9 @@ def make_video_segment(
     run(cmd)
 
 
-def make_audio_segment(source: Path | None, output: Path, duration: float, fade: float, volume_db: float) -> None:
-    fade = min(max(0.05, fade), max(0.05, duration / 3))
-    out_start = max(0.0, duration - fade)
+def make_audio_segment(source: Path | None, output: Path, duration: float, volume_db: float) -> None:
     filters = [
         f"volume={volume_db}dB",
-        f"afade=t=in:st=0:d={fade:.3f}",
-        f"afade=t=out:st={out_start:.3f}:d={fade:.3f}",
         "aresample=48000",
     ]
     if source and source.exists():
@@ -318,8 +314,7 @@ def assemble(manifest_path: Path) -> tuple[Path, dict[str, Any]]:
     height = int(settings.get("height", 1080))
     fps = int(settings.get("fps", 24))
     quality = settings.get("quality", "standard")
-    fade_ms = int(settings.get("audioFadeMs", settings.get("audio_fade_ms", 350)))
-    fade = fade_ms / 1000.0
+    audio_fade_ms = 0
     target_lufs = float(settings.get("targetLUFS", settings.get("target_lufs", -19.0)))
     true_peak = float(settings.get("truePeakDb", settings.get("true_peak_db", -2.0)))
     output = resolve_path(base, manifest.get("output", "masters/final/final-master.mp4"))
@@ -358,7 +353,7 @@ def assemble(manifest_path: Path) -> tuple[Path, dict[str, Any]]:
             video_out = tmp / f"video_{index:03d}.mp4"
             audio_out = tmp / f"audio_{index:03d}.wav"
             make_video_segment(video, video_out, usable_duration, trim_start, speed, width, height, fps, quality)
-            make_audio_segment(audio, audio_out, output_duration, fade, volume_db)
+            make_audio_segment(audio, audio_out, output_duration, volume_db)
             video_segments.append(video_out)
             audio_segments.append(audio_out)
             total_duration += output_duration
@@ -399,7 +394,8 @@ def assemble(manifest_path: Path) -> tuple[Path, dict[str, Any]]:
             "quality": quality,
             "video_cuts": "hard",
             "video_transitions": "none",
-            "audio_fade_ms": fade_ms,
+            "audio_cut_mode": "hard cuts aligned to video module boundaries",
+            "audio_fade_ms": audio_fade_ms,
             "target_lufs": target_lufs,
             "true_peak_db": true_peak,
             "speed_correction_rule": "Only reviewer-approved clip speed changes are applied.",

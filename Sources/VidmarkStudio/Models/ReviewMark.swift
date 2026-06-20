@@ -58,6 +58,8 @@ struct ReviewMark: Identifiable, Codable, Equatable {
     var speedPercent: Int = 100
     var volumeDeltaDb: Double = -3
     var replacementTitle = ""
+    var replacementSFXPath = ""
+    var sfxNote = ""
     var createdAt = Date()
 
     init(timecodeSeconds: Double, revisionType: ReviewRevisionType = .videoProblem) {

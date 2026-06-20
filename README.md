@@ -21,11 +21,12 @@ It is built for creator workflows where a finished video is assembled from many 
 - Theater mode and full-screen playback for better review
 - Large hero review player with J/K/L shuttle controls
 - Timecode revision cards for video, audio, speed, trim, title, and remove-clip requests
-- Dynamic card controls for notes, speed percentages, audio volume changes, trim in/out points, and title fixes
+- New Review reset that clears the active marks and generated review packets without deleting media
+- Dynamic card controls for notes, speed percentages, SFX swaps with preview, audio volume changes, trim in/out points, and title fixes
 - Submit workflow that saves a Markdown/JSON revision packet and copies the Markdown packet to the clipboard
 - Exportable review package in JSON and Markdown
 - Assembly settings export for local post-production
-- FFmpeg-based master assembly helper with hard video cuts, soft audio fades, and loudness normalization
+- FFmpeg-based master assembly helper with hard video cuts, hard audio cuts, and loudness normalization
 - FFmpeg/Pillow-based smart reframing helper for vertical short candidates
 - Local system check for FFmpeg, FFprobe, Python, Swift, engine scripts, and workspace folders
 
@@ -109,10 +110,11 @@ qa/reviewer-notes
 1. Choose or create a project folder.
 2. Choose a master video.
 3. Watch in normal, theater, or full-screen mode.
-4. Use `J` for reverse shuttle, `K` to pause, and `L` for forward shuttle. Repeated `J` or `L` presses increase shuttle speed.
+4. Use `J` to step back one frame, `K` to play/pause, and `L` to step forward one frame.
 5. Pause on a trouble spot and press `Mark`.
 6. Choose the revision type: video problem, audio problem, speed ramp, trim clip start, trim clip end, title fix, or remove clip.
 7. Add notes or use the card-specific controls in the revision panel.
+   Audio problem cards can preview and attach a replacement SFX file from the selected audio library.
 8. Press `SUBMIT` to save the full revision packet and copy it to the clipboard for editor or agent handoff.
 9. Assemble or reframe only after the project passes review.
 
@@ -151,7 +153,7 @@ Example manifest:
     "height": 1080,
     "fps": 24,
     "quality": "standard",
-    "audioFadeMs": 350,
+    "audioFadeMs": 0,
     "targetLUFS": -19,
     "truePeakDb": -2
   },

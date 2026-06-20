@@ -2,6 +2,7 @@ import Foundation
 
 enum ProjectPaths {
     private static let videosRootPreferenceKey = "VidmarkStudioVideosRoot"
+    private static let audioLibraryPreferenceKey = "VidmarkStudioAudioLibraryRoot"
 
     static let workspaceRoot = FileManager.default
         .homeDirectoryForCurrentUser
@@ -14,12 +15,21 @@ enum ProjectPaths {
         }
         return workspaceRoot.appendingPathComponent("Videos", isDirectory: true)
     }
-    static let audioLibraryRoot = workspaceRoot
-        .appendingPathComponent("Audio Library", isDirectory: true)
+    static var audioLibraryRoot: URL {
+        if let storedPath = UserDefaults.standard.string(forKey: audioLibraryPreferenceKey),
+           !storedPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return URL(fileURLWithPath: NSString(string: storedPath).expandingTildeInPath, isDirectory: true)
+        }
+        return workspaceRoot.appendingPathComponent("Audio Library", isDirectory: true)
+    }
     static let toolRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
     static func setVideosRoot(_ url: URL) {
         UserDefaults.standard.set(url.path, forKey: videosRootPreferenceKey)
+    }
+
+    static func setAudioLibraryRoot(_ url: URL) {
+        UserDefaults.standard.set(url.path, forKey: audioLibraryPreferenceKey)
     }
 
     static func defaultOutputFolder(for input: URL) -> URL {

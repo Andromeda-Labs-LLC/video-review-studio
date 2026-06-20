@@ -106,7 +106,7 @@ struct StudioStatusBar: View {
                 .lineLimit(1)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text("Hard video cuts. Soft audio fades. Review before publish.")
+            Text("Hard video cuts. Hard audio cuts. Review before publish.")
                 .foregroundStyle(.tertiary)
         }
         .font(.caption)

@@ -55,7 +55,7 @@ struct AssemblyManifestView: View {
 
                 StudioPanel(title: "FFmpeg Role", subtitle: "Invisible finishing, not flashy editing.") {
                     Text("""
-                    Use FFmpeg for clean concat, retake replacement by timecode, audio fades, loudness normalization, thumbnail frame extraction, contact sheets, draft exports, and Shorts crop handoff.
+                    Use FFmpeg for clean concat, retake replacement by timecode, hard audio cuts, loudness normalization, thumbnail frame extraction, contact sheets, draft exports, and Shorts crop handoff.
 
                     Do not use it to add visual stylization. No video filters, no crossfades, no fake camera motion, no speed ramps. A small speed correction is only allowed when a reviewer mark requests it.
                     """)

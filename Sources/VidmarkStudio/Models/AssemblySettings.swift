@@ -12,8 +12,8 @@ struct AssemblySettings: Codable, Equatable {
     var allowFilters = false
     var defaultPlaybackSpeed = 1.0
     var speedCorrectionRequiresReviewerMark = true
-    var audioFadeMs = 350
-    var audioCrossfadeAllowed = true
+    var audioFadeMs = 0
+    var audioCrossfadeAllowed = false
     var targetLUFS = -19.0
     var truePeakDb = -2.0
     var noHumanVocalizations = true

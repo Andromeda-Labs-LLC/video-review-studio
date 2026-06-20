@@ -28,7 +28,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .review: "Mark revisions"
         case .episode: "Sidecar and folder"
         case .prompts: "ChatGPT image batches"
-        case .audio: "Fades and loudness"
+        case .audio: "SFX and loudness"
         case .assembly: "Manifest export"
         case .shorts: "Smart reframing"
         case .diagnostics: "Local tools"

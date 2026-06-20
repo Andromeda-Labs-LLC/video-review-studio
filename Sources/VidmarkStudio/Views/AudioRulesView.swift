@@ -19,7 +19,7 @@ struct AudioRulesView: View {
 
                 StudioPanel(
                     title: "Mix Rules",
-                    subtitle: "Visuals cut cleanly. Audio stays gentle."
+                    subtitle: "Visuals and sound effects cut cleanly together."
                 ) {
                     VStack(alignment: .leading, spacing: 14) {
                         Toggle("Hard visual cuts only", isOn: $store.assembly.videoCutsOnly)
@@ -31,20 +31,8 @@ struct AudioRulesView: View {
                         Toggle("No human vocalizations", isOn: $store.assembly.noHumanVocalizations)
                             .disabled(true)
 
-                        Divider()
-
-                        VStack(alignment: .leading) {
-                            Text("Audio fade/crossfade: \(store.assembly.audioFadeMs) ms")
-                                .foregroundStyle(.secondary)
-                            Slider(
-                                value: Binding(
-                                    get: { Double(store.assembly.audioFadeMs) },
-                                    set: { store.assembly.audioFadeMs = Int($0) }
-                                ),
-                                in: 180...800,
-                                step: 10
-                            )
-                        }
+                        Toggle("Hard audio cuts at visual edit points", isOn: .constant(!store.assembly.audioCrossfadeAllowed && store.assembly.audioFadeMs == 0))
+                            .disabled(true)
 
                         HStack {
                             VStack(alignment: .leading) {

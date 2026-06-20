@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import SwiftUI
 
@@ -11,6 +12,7 @@ struct ReviewView: View {
     @State private var isPlaying = false
     @State private var frameStepTarget: CMTime?
     @State private var frameDuration = CMTime(value: 1, timescale: 24)
+    @State private var showNewReviewConfirmation = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -38,6 +40,18 @@ struct ReviewView: View {
                 }
             )
         }
+        .confirmationDialog(
+            "Start a new review?",
+            isPresented: $showNewReviewConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Start New Review", role: .destructive) {
+                store.startNewReview()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This clears the visible revision cards and removes generated review packet and assembly setting files for the selected episode. Media files are left untouched.")
+        }
     }
 
     private var reviewDeck: some View {
@@ -59,6 +73,13 @@ struct ReviewView: View {
             }
 
             Spacer()
+
+            Button {
+                showNewReviewConfirmation = true
+            } label: {
+                Label("New Review", systemImage: "arrow.counterclockwise")
+            }
+            .disabled(store.reviewMarks.isEmpty && store.episodeFolderURL == nil)
 
             Button {
                 store.chooseEpisodeFolder()
@@ -221,6 +242,7 @@ struct ReviewView: View {
                             ReviewRevisionCard(
                                 mark: $mark,
                                 currentTime: clock.currentTime,
+                                audioLibraryURL: store.audioLibraryURL,
                                 onSeek: seek,
                                 onDelete: {
                                     store.deleteReviewMark(id: mark.id)
@@ -458,8 +480,10 @@ struct RevisionTypePickerSheet: View {
 struct ReviewRevisionCard: View {
     @Binding var mark: ReviewMark
     var currentTime: Double
+    var audioLibraryURL: URL
     var onSeek: (Double) -> Void
     var onDelete: () -> Void
+    @State private var showSFXPicker = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -474,6 +498,16 @@ struct ReviewRevisionCard: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(.white.opacity(0.10))
         )
+        .sheet(isPresented: $showSFXPicker) {
+            SFXPickerSheet(
+                libraryURL: audioLibraryURL,
+                selectedPath: mark.replacementSFXPath,
+                onChoose: { url in
+                    mark.replacementSFXPath = url.path
+                    showSFXPicker = false
+                }
+            )
+        }
     }
 
     private var cardHeader: some View {
@@ -513,11 +547,32 @@ struct ReviewRevisionCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .audioProblem:
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("Volume adjustment: \(mark.volumeDeltaDb, specifier: "%.1f") dB")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Slider(value: $mark.volumeDeltaDb, in: -18...6, step: 0.5)
+
+                Button {
+                    showSFXPicker = true
+                } label: {
+                    Label("Swap SFX", systemImage: "waveform")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(YellowPillButtonStyle())
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(mark.replacementSFXPath.isEmpty ? "No replacement SFX selected" : URL(fileURLWithPath: mark.replacementSFXPath).lastPathComponent)
+                        .font(.caption)
+                        .foregroundStyle(mark.replacementSFXPath.isEmpty ? .secondary : StudioTheme.gold)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+
+                    TextField("SFX swap note, target sound, or mix instruction", text: $mark.sfxNote, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(2...4)
+                }
             }
         case .speedRamp:
             VStack(alignment: .leading, spacing: 6) {
@@ -595,6 +650,251 @@ struct ReviewRevisionCard: View {
                         .allowsHitTesting(false)
                 }
             }
+    }
+}
+
+private struct SFXCandidate: Identifiable, Equatable {
+    let url: URL
+    let relativePath: String
+
+    var id: String { url.path }
+    var fileName: String { url.lastPathComponent }
+}
+
+struct SFXPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let libraryURL: URL
+    var selectedPath: String
+    var onChoose: (URL) -> Void
+
+    @State private var candidates: [SFXCandidate] = []
+    @State private var selectedURL: URL?
+    @State private var query = ""
+    @State private var loadMessage = "Scanning sound effects..."
+    @State private var previewPlayer: AVPlayer?
+    @State private var previewingURL: URL?
+
+    private var filteredCandidates: [SFXCandidate] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return candidates }
+        return candidates.filter {
+            $0.relativePath.localizedCaseInsensitiveContains(trimmed)
+            || $0.fileName.localizedCaseInsensitiveContains(trimmed)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Swap SFX")
+                        .font(.system(size: 28, weight: .semibold))
+                    Text(libraryURL.path)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+                }
+
+                Spacer()
+
+                Button {
+                    stopPreview()
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+            }
+
+            HStack(spacing: 10) {
+                TextField("Search filename, folder, mood, or tag", text: $query)
+                    .textFieldStyle(.roundedBorder)
+
+                Button {
+                    loadCandidates()
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+
+                Button {
+                    NSWorkspace.shared.open(libraryURL)
+                } label: {
+                    Label("Open Folder", systemImage: "folder")
+                }
+            }
+
+            if filteredCandidates.isEmpty {
+                ContentUnavailableView(
+                    "No SFX Found",
+                    systemImage: "waveform.slash",
+                    description: Text(loadMessage)
+                )
+                .frame(maxWidth: .infinity, minHeight: 280)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(filteredCandidates) { candidate in
+                            sfxRow(candidate)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .frame(minHeight: 320)
+                .background(.black.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+
+            HStack {
+                if let selectedURL {
+                    Text(selectedURL.lastPathComponent)
+                        .font(.caption)
+                        .foregroundStyle(StudioTheme.gold)
+                        .lineLimit(1)
+                } else {
+                    Text("Select a sound effect, preview it, then use it on this mark.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Cancel") {
+                    stopPreview()
+                    dismiss()
+                }
+
+                Button {
+                    guard let selectedURL else { return }
+                    stopPreview()
+                    onChoose(selectedURL)
+                } label: {
+                    Text("Use Selected SFX")
+                        .fontWeight(.bold)
+                }
+                .buttonStyle(YellowPillButtonStyle())
+                .disabled(selectedURL == nil)
+            }
+        }
+        .padding(24)
+        .frame(width: 820, height: 620)
+        .background(StudioTheme.background)
+        .onAppear {
+            if selectedURL == nil, !selectedPath.isEmpty {
+                selectedURL = URL(fileURLWithPath: selectedPath)
+            }
+            loadCandidates()
+        }
+        .onDisappear(perform: stopPreview)
+    }
+
+    private func sfxRow(_ candidate: SFXCandidate) -> some View {
+        HStack(spacing: 10) {
+            Button {
+                selectedURL = candidate.url
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: selectedURL == candidate.url ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selectedURL == candidate.url ? StudioTheme.gold : .secondary)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(candidate.fileName)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(candidate.relativePath)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                togglePreview(candidate.url)
+            } label: {
+                Image(systemName: previewingURL == candidate.url ? "stop.fill" : "play.fill")
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.bordered)
+            .help(previewingURL == candidate.url ? "Stop preview" : "Play preview")
+        }
+        .padding(10)
+        .background(selectedURL == candidate.url ? StudioTheme.gold.opacity(0.14) : .white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private func loadCandidates() {
+        let audioExtensions: Set<String> = [
+            "aif", "aiff", "caf", "flac", "m4a", "mp3", "mp4", "ogg", "wav"
+        ]
+        guard FileManager.default.fileExists(atPath: libraryURL.path) else {
+            candidates = []
+            loadMessage = "The selected audio library folder does not exist yet."
+            return
+        }
+
+        let enumerator = FileManager.default.enumerator(
+            at: libraryURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        )
+
+        let loaded = (enumerator?.compactMap { item -> SFXCandidate? in
+            guard let url = item as? URL else { return nil }
+            let ext = url.pathExtension.lowercased()
+            guard audioExtensions.contains(ext) else { return nil }
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
+            guard values?.isRegularFile == true else { return nil }
+            return SFXCandidate(url: url, relativePath: relativePath(for: url))
+        } ?? [])
+        .sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+
+        candidates = loaded
+        loadMessage = loaded.isEmpty ? "No supported audio files were found in this library." : "\(loaded.count) sound effect files found."
+    }
+
+    private func relativePath(for url: URL) -> String {
+        let root = libraryURL.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        guard path.hasPrefix(root) else { return url.lastPathComponent }
+        return String(path.dropFirst(root.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    }
+
+    private func togglePreview(_ url: URL) {
+        if previewingURL == url {
+            stopPreview()
+            return
+        }
+
+        stopPreview()
+        selectedURL = url
+        let player = AVPlayer(url: url)
+        previewPlayer = player
+        previewingURL = url
+        player.play()
+    }
+
+    private func stopPreview() {
+        previewPlayer?.pause()
+        previewPlayer = nil
+        previewingURL = nil
+    }
+}
+
+struct YellowPillButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(configuration.isPressed ? StudioTheme.gold.opacity(0.72) : StudioTheme.gold)
+            .foregroundStyle(.black)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .opacity(configuration.isPressed ? 0.9 : 1)
     }
 }
 
