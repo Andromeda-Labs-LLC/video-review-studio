@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.4
+
+- Synced the packaged macOS app bundle version with the current Vidmark Studio build.
+- Refreshed the local installed app bundle so stale `0.2.2` app copies are replaced by the latest app.
+
 ## v0.2.3
 
 - Added automatic episode metadata inference when choosing an episode folder or master video.
