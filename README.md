@@ -17,6 +17,7 @@ It is built for creator workflows where a finished video is assembled from many 
 - macOS SwiftUI desktop app with a dark, minimal interface
 - Project sidecar setup for repeatable planning and folder creation
 - Prompt/brief export for external planning or generation tools
+- Image Review module for selecting winning first-frame stills from candidate image batches
 - Native video review player using `AVPlayerView`
 - Theater mode and full-screen playback for better review
 - Large hero review player with J/K/L shuttle controls
@@ -89,7 +90,8 @@ defaults write studio.vidmark.desktop VidmarkStudioVideosRoot "/path/to/your/Vid
 Each project folder can contain:
 
 ```text
-images/source-stills
+images/source-stills/candidates
+images/source-stills/Final
 video-generations/drafts
 video-generations/approved
 masters/drafts
@@ -129,6 +131,20 @@ Recommended master naming:
 11. Press `SUBMIT` to save the full revision packet and copy it to the clipboard for editor or agent handoff.
 12. Use `New Review` to reset the app to a clean state before loading another project. This clears selected project state and generated review packets, but never deletes media.
 13. Assemble or reframe only after the project passes review.
+
+## Image Review Workflow
+
+Use Image Review when a shot has multiple generated still-image candidates and one needs to be selected for video generation.
+
+1. Open `Image Review` from the sidebar.
+2. Choose the episode folder.
+3. Press `Candidates` to load that episode's `images/source-stills/candidates` folder.
+4. Review each five-image candidate set in the large grid.
+5. Select the winning image, then press `Submit Winner`.
+6. The selected still is copied into `images/source-stills/Final`.
+7. The app records the choice in `images/source-stills/Final/image-review-decisions.json`.
+
+Candidate files are left untouched. The module is designed for fast verdict sorting, not destructive cleanup.
 
 ## Local CLI: Reframer
 

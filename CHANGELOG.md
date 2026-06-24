@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.6
+
+- Renamed the primary review module to Video Review.
+- Added an Image Review module for choosing winning first-frame stills from candidate image sets.
+- Image Review can load an episode's `images/source-stills/candidates` folder, display candidate sets in a large grid, save the selected winner into `images/source-stills/Final`, and record decisions in `image-review-decisions.json`.
+- Added `candidates` and `Final` still-image folders to the generated episode structure.
+
 ## v0.2.5
 
 - Replaced the macOS app icon with a higher-contrast classic 35mm cinema camera mark on a white background.

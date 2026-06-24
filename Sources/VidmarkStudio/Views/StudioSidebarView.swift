@@ -7,6 +7,7 @@ struct StudioSidebarView: View {
         List(selection: $selection) {
             Section("Primary") {
                 sidebarRow(.review)
+                sidebarRow(.imageReview)
                 sidebarRow(.episode)
             }
 

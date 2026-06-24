@@ -29,6 +29,8 @@ struct ContentView: View {
             PromptBuilderView(store: store)
         case .review:
             ReviewView(store: store)
+        case .imageReview:
+            ImageReviewView(store: store)
         case .audio:
             AudioRulesView(store: store)
         case .assembly:
@@ -84,9 +86,17 @@ struct StudioHeaderView: View {
             }
 
             Button {
-                store.chooseMasterVideo()
+                if store.selectedSection == .imageReview {
+                    store.chooseImageCandidatesFolder()
+                } else {
+                    store.chooseMasterVideo()
+                }
             } label: {
-                Label("Master", systemImage: "film")
+                if store.selectedSection == .imageReview {
+                    Label("Candidates", systemImage: "photo.stack")
+                } else {
+                    Label("Master", systemImage: "film")
+                }
             }
             .keyboardShortcut("o")
         }

@@ -8,6 +8,7 @@ final class StudioStore: ObservableObject {
     @Published var assembly = AssemblySettings()
     @Published var episodeFolderURL: URL?
     @Published var masterVideoURL: URL?
+    @Published var imageCandidatesFolderURL: URL?
     @Published var audioLibraryURL: URL = ProjectPaths.audioLibraryRoot
     @Published var reviewMarks: [ReviewMark] = []
     @Published var reviewFrameRate: Double = 24
@@ -32,7 +33,8 @@ final class StudioStore: ObservableObject {
             .appendingPathComponent(sidecar.folderName, isDirectory: true)
 
         let folders = [
-            "images/source-stills",
+            "images/source-stills/candidates",
+            "images/source-stills/Final",
             "video-generations/drafts",
             "video-generations/approved",
             "masters/drafts",
@@ -107,6 +109,7 @@ final class StudioStore: ObservableObject {
         assembly = AssemblySettings()
         episodeFolderURL = nil
         masterVideoURL = nil
+        imageCandidatesFolderURL = nil
         reviewFrameRate = 24
         selectedSection = .review
         status = "Started a clean review. Project state, selected master, marks, and generated packets were cleared."
@@ -209,6 +212,33 @@ final class StudioStore: ObservableObject {
         }
     }
 
+    func chooseImageCandidatesFolder() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Image Candidates Folder"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = defaultImageCandidatesFolder() ?? episodeFolderURL ?? ProjectPaths.videosRoot
+        if panel.runModal() == .OK, let url = panel.url {
+            imageCandidatesFolderURL = url
+            if episodeFolderURL == nil {
+                episodeFolderURL = ProjectPaths.inferEpisodeFolder(from: url)
+            }
+            syncMetadataFromSelection()
+            status = "Selected image candidates folder."
+        }
+    }
+
+    func loadDefaultImageCandidatesFolder() {
+        guard let folder = defaultImageCandidatesFolder() else {
+            status = "Choose an episode folder first."
+            return
+        }
+        imageCandidatesFolderURL = folder
+        status = "Loaded image candidates folder."
+    }
+
     func chooseAudioLibrary() {
         let panel = NSOpenPanel()
         panel.title = "Choose Audio Library"
@@ -241,6 +271,9 @@ final class StudioStore: ObservableObject {
         if episodeFolderURL == nil, let masterVideoURL {
             episodeFolderURL = ProjectPaths.inferEpisodeFolder(from: masterVideoURL)
         }
+        if episodeFolderURL == nil, let imageCandidatesFolderURL {
+            episodeFolderURL = ProjectPaths.inferEpisodeFolder(from: imageCandidatesFolderURL)
+        }
         guard let episodeFolderURL else { return }
         let metadata = ProjectPaths.metadata(
             forEpisodeFolder: episodeFolderURL,
@@ -249,6 +282,11 @@ final class StudioStore: ObservableObject {
         sidecar.episodeID = metadata.episodeID
         sidecar.workingTitle = metadata.workingTitle
         sidecar.slug = metadata.slug
+    }
+
+    private func defaultImageCandidatesFolder() -> URL? {
+        episodeFolderURL?
+            .appendingPathComponent("images/source-stills/candidates", isDirectory: true)
     }
 
     private func removeGeneratedReviewOutputs() {
