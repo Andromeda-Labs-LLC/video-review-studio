@@ -14,10 +14,15 @@ enum ProjectPaths {
         .homeDirectoryForCurrentUser
         .appendingPathComponent("Movies", isDirectory: true)
         .appendingPathComponent("VIDMARK STUDIO", isDirectory: true)
+    static let miniaturePlacesVideosRoot = URL(fileURLWithPath: "/Volumes/Adventure/Miniature Places/Videos", isDirectory: true)
+
     static var videosRoot: URL {
         if let storedPath = UserDefaults.standard.string(forKey: videosRootPreferenceKey),
            !storedPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return URL(fileURLWithPath: NSString(string: storedPath).expandingTildeInPath, isDirectory: true)
+        }
+        if FileManager.default.fileExists(atPath: miniaturePlacesVideosRoot.path) {
+            return miniaturePlacesVideosRoot
         }
         return workspaceRoot.appendingPathComponent("Videos", isDirectory: true)
     }

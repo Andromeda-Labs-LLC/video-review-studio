@@ -201,7 +201,7 @@ final class StudioStore: ObservableObject {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie]
-        panel.directoryURL = episodeFolderURL ?? ProjectPaths.videosRoot
+        panel.directoryURL = defaultMasterFolder() ?? episodeFolderURL ?? ProjectPaths.videosRoot
         if panel.runModal() == .OK, let url = panel.url {
             masterVideoURL = url
             if episodeFolderURL == nil {
@@ -287,6 +287,21 @@ final class StudioStore: ObservableObject {
     private func defaultImageCandidatesFolder() -> URL? {
         episodeFolderURL?
             .appendingPathComponent("images/source-stills/candidates", isDirectory: true)
+    }
+
+    private func defaultMasterFolder() -> URL? {
+        guard let episodeFolderURL else { return nil }
+        let finalMasters = episodeFolderURL.appendingPathComponent("masters/final", isDirectory: true)
+        if FileManager.default.fileExists(atPath: finalMasters.path) {
+            return finalMasters
+        }
+
+        let draftMasters = episodeFolderURL.appendingPathComponent("masters/drafts", isDirectory: true)
+        if FileManager.default.fileExists(atPath: draftMasters.path) {
+            return draftMasters
+        }
+
+        return episodeFolderURL.appendingPathComponent("masters", isDirectory: true)
     }
 
     private func removeGeneratedReviewOutputs() {

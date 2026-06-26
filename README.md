@@ -78,8 +78,10 @@ To run a quick launch verification:
 By default, VIDMARK STUDIO creates and uses:
 
 ```text
-~/Movies/VIDMARK STUDIO
+/Volumes/Adventure/Miniature Places/Videos
 ```
+
+If the Adventure drive is not mounted, VIDMARK STUDIO falls back to `~/Movies/VIDMARK STUDIO/Videos`.
 
 The `Episode` picker opens the configured videos folder. To point it at an existing production library:
 
@@ -119,6 +121,7 @@ Recommended master naming:
 
 1. Choose or create a project folder.
 2. Choose a master video.
+   After an episode is selected, the Master picker opens that episode's `masters/final` folder first, then falls back to `masters/drafts`.
 3. Watch in normal, theater, or full-screen mode.
    Full-screen playback can be exited with `Esc` or the `Exit Full Screen` button.
 4. Use the arrow transport buttons to step backward or forward one frame.

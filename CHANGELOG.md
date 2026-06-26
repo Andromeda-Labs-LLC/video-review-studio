@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.8
+
+- Changed the default Episode picker root to `/Volumes/Adventure/Miniature Places/Videos` when the Adventure drive is mounted, with the local Movies workspace retained as a fallback.
+- Updated the Master picker to open the selected episode's `masters/final` folder first, then `masters/drafts`, then the episode folder.
+- Documented the Adventure-drive default and master-picker behavior in the README.
+
 ## v0.2.7
 
 - Added a `Regenerate Video` review mark type for requesting a fresh image-to-video re-roll of a generated source clip, normally through the Miniature Places Kling 3.0 protocol.
