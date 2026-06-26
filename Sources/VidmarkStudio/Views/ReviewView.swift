@@ -768,6 +768,10 @@ struct ReviewRevisionCard: View {
             Label("Agent should inspect this moment for visual artifacts, bad motion, malformed geometry, or framing problems.", systemImage: "eye")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        case .regenerateVideo:
+            Label("Regenerate this source clip through the Miniature Places image-to-video protocol, normally Kling 3.0 API, and replace it with a fresh re-roll candidate.", systemImage: "arrow.triangle.2.circlepath.video")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         case .audioProblem:
             VStack(alignment: .leading, spacing: 10) {
                 Text("Volume adjustment: \(mark.volumeDeltaDb, specifier: "%.1f") dB")

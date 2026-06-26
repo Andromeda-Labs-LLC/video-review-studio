@@ -2,6 +2,7 @@ import Foundation
 
 enum ReviewRevisionType: String, Codable, CaseIterable, Identifiable {
     case videoProblem
+    case regenerateVideo
     case audioProblem
     case speedRamp
     case trimClipStart
@@ -14,6 +15,7 @@ enum ReviewRevisionType: String, Codable, CaseIterable, Identifiable {
 
     static let pickerCases: [ReviewRevisionType] = [
         .videoProblem,
+        .regenerateVideo,
         .audioProblem,
         .speedRamp,
         .trimClipStart,
@@ -25,6 +27,7 @@ enum ReviewRevisionType: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .videoProblem: "Video problem"
+        case .regenerateVideo: "Regenerate Video"
         case .audioProblem: "Audio problem"
         case .speedRamp: "Speed ramp"
         case .trimClipStart: "Trim clip start"
@@ -38,6 +41,7 @@ enum ReviewRevisionType: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .videoProblem: "Flag visual artifacts, odd motion, bad framing, or malformed imagery."
+        case .regenerateVideo: "Request a fresh image-to-video re-roll for the generated source clip."
         case .audioProblem: "Flag harsh, missing, creepy, loud, or mismatched sound."
         case .speedRamp: "Request a natural percentage speed change for this section."
         case .trimClipStart: "Mark an in/out range to cut from the beginning side of a clip."
@@ -51,6 +55,7 @@ enum ReviewRevisionType: String, Codable, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .videoProblem: "video.badge.exclamationmark"
+        case .regenerateVideo: "arrow.triangle.2.circlepath.video"
         case .audioProblem: "waveform.badge.exclamationmark"
         case .speedRamp: "speedometer"
         case .trimClipStart: "timeline.selection"
@@ -86,6 +91,8 @@ struct ReviewMark: Identifiable, Codable, Equatable {
             self.trimOutSeconds = nil
         case .speedRamp:
             self.speedPercent = 120
+        case .regenerateVideo:
+            self.note = "Regenerate this generated source video clip as a fresh re-roll. Go back to the approved first-frame still and Miniature Places image-to-video protocol, normally Kling 3.0 API, rewrite the video prompt as needed around the actual still, and create a new candidate clip to replace this one for review."
         case .thumbnail:
             self.note = "Export a full-resolution 1920x1080 PNG still image from this exact frame for the YouTube thumbnail background."
         default:

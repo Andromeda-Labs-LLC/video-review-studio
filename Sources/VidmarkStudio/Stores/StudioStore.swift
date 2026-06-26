@@ -347,6 +347,7 @@ struct ReviewPackage: Codable {
             "- Audio uses hard cuts aligned to visual edits, with loudness normalization and peak control.",
             "- Speed correction is allowed only for marks that explicitly request it.",
             "- Thumbnail marks request a full-resolution 1920x1080 PNG still exported from the exact marked frame.",
+            "- Regenerate Video marks request a fresh source clip re-roll through the Miniature Places image-to-video protocol, normally Kling 3.0 API, before replacing the marked clip.",
             "",
             "## Marks",
             "",

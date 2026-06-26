@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.7
+
+- Added a `Regenerate Video` review mark type for requesting a fresh image-to-video re-roll of a generated source clip, normally through the Miniature Places Kling 3.0 protocol.
+- Revision packets now include an explicit Regenerate Video rule so production agents treat those marks as source-clip replacement requests, not ordinary edit fixes.
+- Reworked video full-screen playback into a controlled full-screen window with an on-screen `Exit Full Screen` button and `Esc` key handling.
+- Documented the new review mark type in the README workflow and feature list.
+
 ## v0.2.6
 
 - Renamed the primary review module to Video Review.

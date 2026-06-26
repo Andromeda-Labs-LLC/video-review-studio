@@ -19,9 +19,9 @@ It is built for creator workflows where a finished video is assembled from many 
 - Prompt/brief export for external planning or generation tools
 - Image Review module for selecting winning first-frame stills from candidate image batches
 - Native video review player using `AVPlayerView`
-- Theater mode and full-screen playback for better review
+- Theater mode and full-screen playback for better review, with Escape and an on-screen Exit button to leave full screen
 - Large hero review player with J/K/L shuttle controls
-- Timecode revision cards for video, audio, speed, trim, title, and remove-clip requests
+- Timecode revision cards for video, regenerate-video, audio, speed, trim, title, and remove-clip requests
 - New Review reset that clears the active marks and generated review packets without deleting media
 - Dynamic card controls for notes, speed percentages, SFX swaps with preview, audio volume changes, trim in/out points, and title fixes
 - Submit workflow that saves a Markdown/JSON revision packet and copies the Markdown packet to the clipboard
@@ -120,12 +120,13 @@ Recommended master naming:
 1. Choose or create a project folder.
 2. Choose a master video.
 3. Watch in normal, theater, or full-screen mode.
+   Full-screen playback can be exited with `Esc` or the `Exit Full Screen` button.
 4. Use the arrow transport buttons to step backward or forward one frame.
 5. Use `J` for reverse playback, `L` for forward playback, and press the same key again to double the shuttle speed. Use `K` or the spacebar to play/pause.
 6. Use `1` to jump to the first frame and `2` to jump to the last frame.
 7. Pause on a trouble spot and press `Mark`, or press `M`.
 8. Press `Thumbnail` to mark the parked frame for a full-resolution PNG thumbnail export.
-9. Choose the revision type: video problem, audio problem, speed ramp, trim clip start, trim clip end, title fix, thumbnail, or remove clip.
+9. Choose the revision type: video problem, regenerate video, audio problem, speed ramp, trim clip start, trim clip end, title fix, thumbnail, or remove clip.
 10. Add notes or use the card-specific controls in the revision panel.
    Audio problem cards can preview and attach a replacement SFX file from the selected audio library.
 11. Press `SUBMIT` to save the full revision packet and copy it to the clipboard for editor or agent handoff.
